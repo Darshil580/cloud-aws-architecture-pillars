@@ -1,3 +1,4 @@
+sudo dnf install postgresql15
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash
 nvm --version
 nvm install 14.17.0
