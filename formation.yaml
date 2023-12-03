@@ -1,0 +1,177 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  VpcCIDR:
+    Type: String
+    Default: '10.0.0.0/16'
+    Description: 'CIDR block for the VPC'
+
+  PublicSubnet1CIDR:
+    Type: String
+    Default: '10.0.1.0/24'
+    Description: 'CIDR block for the first public subnet'
+
+  PublicSubnet2CIDR:
+    Type: String
+    Default: '10.0.2.0/24'
+    Description: 'CIDR block for the second public subnet'
+
+  PrivateSubnet1CIDR:
+    Type: String
+    Default: '10.0.4.0/24'
+    Description: 'CIDR block for the first private subnet'
+
+  PrivateSubnet2CIDR:
+    Type: String
+    Default: '10.0.5.0/24'
+    Description: 'CIDR block for the second private subnet'
+
+Resources:
+  MyVPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: !Ref 'VpcCIDR'
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      Tags:
+        - Key: Name
+          Value: 'cloud-vpc'
+
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties:
+      Tags:
+        - Key: Name
+          Value: 'InternetGateway'
+
+  AttachGateway:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref 'MyVPC'
+      InternetGatewayId: !Ref 'InternetGateway'
+
+  PublicSubnet1:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref 'MyVPC'
+      CidrBlock: !Ref 'PublicSubnet1CIDR'
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: 'true'
+      Tags:
+        - Key: Name
+          Value: 'PublicSubnet1'
+
+  PublicSubnet2:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref 'MyVPC'
+      CidrBlock: !Ref 'PublicSubnet2CIDR'
+      AvailabilityZone: !Select [1, !GetAZs '']
+      MapPublicIpOnLaunch: 'true'
+      Tags:
+        - Key: Name
+          Value: 'PublicSubnet2'
+
+  PrivateSubnet1:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref 'MyVPC'
+      CidrBlock: !Ref 'PrivateSubnet1CIDR'
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: 'PrivateSubnet1'
+
+  PrivateSubnet2:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref 'MyVPC'
+      CidrBlock: !Ref 'PrivateSubnet2CIDR'
+      AvailabilityZone: !Select [1, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: 'PrivateSubnet2'
+  
+  PrivateSubnet3:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref 'MyVPC'
+      CidrBlock: !Ref 'PrivateSubnet3CIDR'
+      AvailabilityZone: !Select [2, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: 'PrivateSubnet3'
+
+  PublicInstance1:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: 'ami-0230bd60aa48260c6'  # Replace with your desired AMI ID
+      InstanceType: 't2.micro'
+      SubnetId: !Ref 'PublicSubnet1'
+      Tags:
+        - Key: Name
+          Value: 'PublicInstance1'
+      SecurityGroupIds:
+        - !Ref PublicInstanceSecurityGroup
+
+  PublicInstance2:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: 'ami-0230bd60aa48260c6'  # Replace with your desired AMI ID
+      InstanceType: 't2.micro'
+      SubnetId: !Ref 'PublicSubnet2'
+      Tags:
+        - Key: Name
+          Value: 'PublicInstance2'
+      SecurityGroupIds:
+        - !Ref PublicInstanceSecurityGroup
+
+  RDSSubnetGroup:
+    Type: 'AWS::RDS::DBSubnetGroup'
+    Properties:
+      DBSubnetGroupName: 'MyDBSubnetGroup'
+      SubnetIds:
+        - !Ref 'PrivateSubnet1'
+        - !Ref 'PrivateSubnet2'
+        - !Ref 'PrivateSubnet3'
+      DBSubnetGroupDescription: 'Subnet group for RDS PostgreSQL database'
+      Tags:
+        - Key: Name
+          Value: 'MyDBSubnetGroup'
+
+  PublicInstanceSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'Security Group for Public Instances'
+      VpcId: !Ref 'MyVPC'
+
+  RDSSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'Security Group for RDS Instance'
+      VpcId: !Ref 'MyVPC'
+      SecurityGroupIngress:
+        - IpProtocol: 'tcp'
+          FromPort: '5432'
+          ToPort: '5432'
+          SourceSecurityGroupId: !Ref PublicInstanceSecurityGroup
+
+  MyDBInstance:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      SourceDBClusterIdentifier : "term-db-instance"
+      AllocatedStorage: '20'
+      DBInstanceClass: 'db.m5d.large'
+      Engine: 'postgres'
+      EngineVersion: '15.4'
+      MasterUsername: 'master'
+      MasterUserPassword: '12345678'
+      MultiAZ: 'true'
+      PubliclyAccessible: 'false'
+      VPCSecurityGroups:
+        - !Ref RDSSecurityGroup
+      DBSubnetGroupName: !Ref RDSSubnetGroup
+
+Outputs:
+  RDSSecurityGroup:
+    Value: !Ref RDSSecurityGroup
+    Description: 'Security Group ID for RDS Instance'

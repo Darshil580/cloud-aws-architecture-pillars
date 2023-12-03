@@ -40,7 +40,7 @@ node_modules
 
 db.sqlite3
 db.sqlite3-journal
-/.env
+# /.env
 
 package-lock.json
 
