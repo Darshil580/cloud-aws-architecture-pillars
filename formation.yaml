@@ -218,15 +218,6 @@ Resources:
 
 # Second Internet Gateway for one Private Route Tables
 
-  MyInternetGateway2:
-    Type: 'AWS::EC2::InternetGateway'
-
-  # AttachGateway2:
-  #   Type: 'AWS::EC2::VPCGatewayAttachment'
-  #   Properties:
-  #     VpcId: !Ref 'MyVPC'
-  #     InternetGatewayId: !Ref 'MyInternetGateway2'
-
   # Route1:
   #   Type: 'AWS::EC2::Route'
   #   DependsOn: 'AttachGateway'
@@ -280,6 +271,8 @@ Resources:
       Tags:
         - Key: Name
           Value: 'PublicInstance1'
+      SecurityGroupIds:
+        - !Ref PublicInstanceSecurityGroup
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
@@ -312,6 +305,9 @@ Resources:
       Tags:
         - Key: Name
           Value: 'PublicInstance2'
+      SecurityGroupIds:
+        - !Ref EC2SecurityGroup
+        - !Ref PublicInstanceSecurityGroup
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
@@ -343,7 +339,7 @@ Resources:
         - Key: Name
           Value: 'PublicInstance3'
       SecurityGroupIds:
-        - !Ref EC2SecurityGroup
+        - !Ref PublicInstanceSecurityGroup
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
@@ -364,8 +360,6 @@ Resources:
           node your_app.js
           pm2 start app.js
 
-# Creating Loadbalancer ...................
-
   MyLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
@@ -383,32 +377,6 @@ Resources:
         - Key: Name
           Value: 'MyLoadBalancer'
 
-# Creating Loadbalancer Listener ...................
-
-  MyListener:
-    Type: AWS::ElasticLoadBalancingV2::Listener
-    Properties:
-      DefaultActions:
-        - TargetGroupArn: !Ref MyTargetGroup
-          Type: 'forward'
-      LoadBalancerArn: !Ref MyLoadBalancer
-      Port: 80
-      Protocol: HTTP
-      SslPolicy: ELBSecurityPolicy-2016-08
-      DefaultActions:
-        - Type: fixed-response
-          FixedResponseConfig:
-            StatusCode: '200'
-            ContentType: 'text/plain'
-            Content: 'OK'
-      DefaultActions:
-        - TargetGroupArn: !Ref MyTargetGroup
-          Type: 'forward'
-      StickinessPolicy:
-        DurationSeconds: 60
-        Enabled: true
-    DependsOn: MyTargetGroup
-
   MyLoadBalancerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -420,8 +388,6 @@ Resources:
           FromPort: 80
           ToPort: 80
           CidrIp: 0.0.0.0/0
-
-# Creating Loadbalancer's Target EC2 Instances
 
   MyTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -442,11 +408,6 @@ Resources:
         - Id: !Ref PublicInstance1
         - Id: !Ref PublicInstance2
         - Id: !Ref PublicInstance3
-
-  ProjectBucket:
-    Type: 'AWS::S3::Bucket'
-    Properties:
-      BucketName: term-project-metadata
 
   MyKMSKey:
     Type: "AWS::KMS::Key"
