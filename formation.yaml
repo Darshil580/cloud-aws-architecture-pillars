@@ -266,8 +266,8 @@ Resources:
       InstanceType: 't2.micro'
       SubnetId: !Ref 'PublicSubnet1'
       KeyName: !Ref KeyName
-      SecurityGroupIds:
-        - !Ref EC2SecurityGroup
+      # SecurityGroupIds:
+      #   - !Ref EC2SecurityGroup
       Tags:
         - Key: Name
           Value: 'PublicInstance1'
@@ -300,13 +300,12 @@ Resources:
       InstanceType: 't2.micro'
       SubnetId: !Ref 'PublicSubnet2'
       KeyName: !Ref KeyName
-      SecurityGroupIds:
-        - !Ref EC2SecurityGroup
+      # SecurityGroupIds:
+      #   - !Ref EC2SecurityGroup
       Tags:
         - Key: Name
           Value: 'PublicInstance2'
       SecurityGroupIds:
-        - !Ref EC2SecurityGroup
         - !Ref PublicInstanceSecurityGroup
       UserData:
         Fn::Base64: !Sub |
@@ -335,6 +334,8 @@ Resources:
       InstanceType: 't2.micro'
       SubnetId: !Ref 'PublicSubnet3'
       KeyName: !Ref KeyName
+      # SecurityGroupIds:
+      #   - !Ref EC2SecurityGroup      
       Tags:
         - Key: Name
           Value: 'PublicInstance3'
@@ -373,6 +374,18 @@ Resources:
       LoadBalancerAttributes:
         - Key: idle_timeout.timeout_seconds
           Value: '60'
+        - Key: access_logs.s3.enabled
+          Value: 'true'
+        - Key: access_logs.s3.bucket
+          Value: !Ref MyS3Bucket
+        - Key: access_logs.s3.prefix
+          Value: 'load-balancer-access-logs/'
+        - Key: connection_logs.s3.enabled
+          Value: 'true'
+        - Key: connection_logs.s3.bucket
+          Value: !Ref MyS3Bucket
+        - Key: access_logs.s3.prefix
+          Value: 'load-balancer-connection-logs/'
       Tags:
         - Key: Name
           Value: 'MyLoadBalancer'
@@ -409,6 +422,43 @@ Resources:
         - Id: !Ref PublicInstance2
         - Id: !Ref PublicInstance3
 
+  MyS3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: cloud-metadata
+
+  LogBucketPolicy:
+      Type: 'AWS::S3::BucketPolicy'
+      Properties:
+        Bucket: !Ref MyS3Bucket
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement: 
+            - Effect: 'Allow'
+              Principal:
+                AWS: 'arn:aws:iam::127311923021:root'
+              Action: 's3:PutObject'
+              Resource: !Sub 'arn:aws:s3:::${MyS3Bucket}/load-balancer-access-logs/AWSLogs/363563127636/*'
+            - Effect: 'Allow'
+              Principal:
+                AWS: 'arn:aws:iam::127311923021:root'
+              Action: 's3:PutObject'
+              Resource: !Sub 'arn:aws:s3:::${MyS3Bucket}/load-balancer-connection-logs/AWSLogs/363563127636/*'
+
+  AccessLogFolderObject:
+    Type: 'AWS::S3::Object'
+    Properties:
+      Bucket: !Ref MyS3Bucket
+      Key: 'load-balancer-access-logs/'
+
+  ConnectionLogFolderObject:
+    Type: 'AWS::S3::Object'
+    Properties:
+      Bucket: !Ref MyS3Bucket
+      Key: 'load-balancer-connection-logs/'
+
+            
+
   MyKMSKey:
     Type: "AWS::KMS::Key"
     Properties:
@@ -442,6 +492,15 @@ Resources:
     Properties:
       GroupDescription: 'Security Group for Public Instances'
       VpcId: !Ref 'MyVPC'
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
+          FromPort: 22
+          ToPort: 22
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: 80
+          ToPort: 80
+          CidrIp: "0.0.0.0/0"
 
   RDSSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
