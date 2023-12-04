@@ -10,7 +10,6 @@
 # npm install -g typescript
 # npm install -g pm2
 # cd cloud-aws-architecture-pillars
-npm install
-npm run build-prod
-node your_app.js
+sudo npm install
+sudo npm run build-prod
 pm2 start app.js
