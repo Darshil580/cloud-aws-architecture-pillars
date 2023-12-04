@@ -63,7 +63,7 @@ module.exports = {
     url:
       databaseUrl ||
       // 'postgres://realworld_next_user:a@localhost:5432/realworld_next',
-      "postgres://master:12345678@"+process.env.DB_HOST+"/termdb",
+      "postgres://master:12345678@term-db-instance.c1f5fobxfzje.us-east-1.rds.amazonaws.com/termdb",
     dialect: 'postgres',
     dialectOptions: {
       // https://stackoverflow.com/questions/27687546/cant-connect-to-heroku-postgresql-database-from-local-node-app-with-sequelize

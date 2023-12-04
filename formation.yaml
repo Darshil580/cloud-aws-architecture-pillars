@@ -466,7 +466,7 @@ Resources:
   MyLaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
-      ImageId: ami-015082e89646c15a6
+      ImageId: ami-05bb815329c1f01c4
       InstanceType: t2.micro  
       KeyName: !Ref KeyName
       SecurityGroups:
@@ -478,8 +478,9 @@ Resources:
           sudo touch abcd.txt
           sudo git clone https://github.com/Darshil580/cloud-aws-architecture-pillars.git  >> abcd.txt
           cd cloud-aws-architecture-pillars
-          sudo npm install >> abc.txt
+          npm install >> abc.txt
           sudo pm2 start app.js >> abc.txt
+          # sudo export HOST_DB=${MyDBInstance.Endpoint.Address} >> /etc/profile
 
   MyScaleUpPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
@@ -579,23 +580,31 @@ Resources:
           ToPort: '5432'
           SourceSecurityGroupId: !Ref PublicInstanceSecurityGroup
 
-  # MyDBInstance:
-  #   Type: 'AWS::RDS::DBInstance'
-  #   Properties:
-  #     DBInstanceIdentifier : !Ref DBInstanceIdentifier
-  #     AllocatedStorage: '20'
-  #     DBInstanceClass: 'db.t2.micro'
-  #     Engine: 'postgres'
-  #     EngineVersion: '15.4'
-  #     MasterUsername: !Ref MasterUsername
-  #     MasterUserPassword: !Ref MasterUserPassword
-  #     MultiAZ: 'true'
-  #     PubliclyAccessible: 'false'
-  #     VPCSecurityGroups:
-  #       - !Ref RDSSecurityGroup
-  #     DBSubnetGroupName: !Ref RDSSubnetGroup
+  MyDBInstance:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      DBInstanceIdentifier : !Ref DBInstanceIdentifier
+      AllocatedStorage: '20'
+      DBInstanceClass: 'db.t2.micro'
+      Engine: 'postgres'
+      EngineVersion: '15.4'
+      MasterUsername: !Ref MasterUsername
+      MasterUserPassword: !Ref MasterUserPassword
+      MultiAZ: 'true'
+      PubliclyAccessible: 'false'
+      VpcSecurityGroups:
+        - !Ref RDSSecurityGroup
+      DBSubnetGroupName: !Ref RDSSubnetGroup
 
 Outputs:
   RDSSecurityGroup:
     Value: !Ref RDSSecurityGroup
     Description: 'Security Group ID for RDS Instance'
+
+  RDSEndpoint:
+    Value: !GetAtt MyDBInstance.Endpoint.Address
+    Description: 'Endpoint address of the RDS Instance'
+
+  LoadBalancerDNSName:
+    Value: !GetAtt MyLoadBalancer.DNSName
+    Description: 'DNS name of the Load Balancer'
