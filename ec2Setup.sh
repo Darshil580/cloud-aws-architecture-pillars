@@ -12,5 +12,4 @@
 # cd cloud-aws-architecture-pillars
 sudo -s
 npm install
-exit
 pm2 start app.js
