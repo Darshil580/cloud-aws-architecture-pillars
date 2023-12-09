@@ -10,6 +10,5 @@
 # npm install -g typescript
 # npm install -g pm2
 # cd cloud-aws-architecture-pillars
-sudo -s
 npm install
 pm2 start app.js
